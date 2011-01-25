@@ -12,6 +12,7 @@ from urllib import quote_plus, unquote_plus
 
 import models
 import houndsleuth
+
 from utils import paginate
 
 class ShakespeareIndexHandler(houndsleuth.IndexHandler):

@@ -1,4 +1,4 @@
-
+from urllib import quote_plus, unquote_plus
 
 def paginate(self, q, offset, per_page, search_info):
 	" Return an html pagination for the search results. "
