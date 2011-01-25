@@ -1,0 +1,18 @@
+<html>
+<head>
+	<title>{{work.title}}</title>
+	<style type="text/css" media="screen">
+		
+	</style>
+</head>
+<body>
+	<div id="content">
+	<h1>{{work.title}}</h1>
+	<ul>
+		{% for scene in scenes %}
+		<li>Act: {{scene.act_num}}, Scene: {{scene.scene_num}} <a href="/demo/works/{{scene.parent_key.id}}/scenes/{{scene.key.id}}">{{scene.title}}</a></li>
+		{% endfor %}
+	</ul>
+</body>
+</html>
+	

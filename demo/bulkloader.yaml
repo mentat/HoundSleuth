@@ -1,0 +1,43 @@
+python_preamble:
+- import: models
+- import: google.appengine.ext.bulkload.transform
+- import: google.appengine.api.datastore
+
+# List of all the transformer classes.
+transformers:
+- model: models.Work
+  connector: simplexml
+  connector_options:
+    xpath_to_nodes: /works/work
+    style: element_centric
+  property_map:
+    - property: __key__
+      external_name: key
+      import_transform: transform.create_deep_key(('Work', transform.CURRENT_PROPERTY, True),)
+    - property: title
+      external_name: title
+    - property: genre
+      external_name: genre
+      
+- model: models.Scene
+  connector: simplexml
+  connector_options:
+    xpath_to_nodes: /works/work/scene
+    style: element_centric
+  property_map:
+    - property: __key__
+      external_name: key
+      import_transform: transform.create_deep_key(
+        ('Work', 'work', True),
+        ('Scene', transform.CURRENT_PROPERTY, True))
+      export_transform: datastore.Key.id
+    - property: act_num
+      external_name: act
+      import_transform: int
+    - property: scene_num
+      external_name: scene
+      import_transform: int
+    - property: text
+      external_name: text
+    - property: title
+      external_name: title

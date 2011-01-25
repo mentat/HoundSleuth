@@ -1,0 +1,85 @@
+<html>
+<head>
+	<title>The Complete Works of Shakespeare</title>
+	<style type="text/css" media="screen">
+		html, body { 
+			width 100%; height: 100%; margin: 0px; padding: 0px; }
+		h1,h2,h3,h4 { margin: 0px 0 7px 0px }
+		div#content {
+			width: 80%;
+			margin:auto;
+			margin-top: 15px;
+			border: 1px solid #efefef;
+			padding: 5px;
+		}
+		table {
+			width: 95%;
+			margin: auto;
+			border-collapse:collapse;
+		}
+		table th {
+			background: #cdcdcd;
+			color: white;
+		}
+		table tr {
+			background: #dedede;
+		}
+		table tr.odd {
+			background: #efefef;
+		}
+		table .center {
+			text-align: center;
+		}
+	</style>
+</head>
+<body>
+	<div id="content">
+	<h1>The Complete Works of Shakespeare</h1>
+	<form name="search" method="GET" action="/demo/">
+		<input type="text" name="q"{% if q %}value="{{q}}"{% endif %} /><input type="submit" value="Search"/>
+	</form>
+	{% if q %}
+	<h1>Search Results</h1>
+	<p><em>{{info.totalfound}} results found for "{{q}}"</em></p>
+	<table>
+		<tr>
+			<th>Play</th>
+			<th>Act</th>
+			<th>Scene</th>
+			<th>Title</th>
+			<th>Relevance</th>
+		</tr>	
+		{% if not results %}
+		<tr>
+			<td colspan="5" style="text-align:center">No records found!</td>
+		</tr>
+		{% endif %}
+		{% for item in results %}
+		<tr class="{% cycle 'odd', 'even' %}">
+			<td class="center"><a href="/demo/works/{{item.parent_key.id}}">{{item.work_title}}</a></td>
+			<td class="center">{{item.act_num}}</td>
+			<td class="center">{{item.scene_num}}</td>
+			<td><a href="/demo/works/{{item.parent_key.id}}/scenes/{{item.key.id}}">{{item.title}}</a></td>
+			<td class="center">{{item.weight}}</td>
+		</tr>
+		{% endfor %}
+		<tr>
+			<th colspan="5">{{pagination|safe}}</th>
+		</tr>
+	</table>
+	{% else %}
+	<ul>
+	{% for item in results %}
+	{% ifchanged item.genre %}
+	</ul>
+	<h2>{{item.genre}}</h2>
+	<ul>
+	{% endifchanged %}
+		<li><a href="/demo/works/{{item.key.id}}">{{item.title}}</a></li>
+		{% endfor %}
+	</ul>
+	{% endif %}
+	</div>
+</body>
+</html>
+	
