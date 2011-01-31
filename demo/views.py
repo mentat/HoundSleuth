@@ -20,9 +20,9 @@ class ShakespeareIndexHandler(houndsleuth.IndexHandler):
 	A web handler that derives from IndexHandler.
 	"""
 	# We want to index all of the scenes
-	QUERY = models.Scene.all()
+	QUERY = models.Scene.all().order('act_num')
 	# Smaller chunck size since they are large, not really needed.
-	CHUNK_SIZE = 50
+	CHUNK_SIZE = 10
 	# The list of fields to index.
 	FIELDS = (
 		# Index 'title' and store it on the index.
