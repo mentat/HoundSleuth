@@ -220,15 +220,12 @@ class IndexHandler(webapp.RequestHandler):
 		
 		sig = ''.join(['%s%s' % (x, self.request.params[x]) \
 			for x in sorted(self.request.params.iterkeys()) if x != 'sig'])
-		logging.error(sig)
+
 		sig = hmac.new(key, 
 					   msg=sig, 
 					   digestmod=hashlib.sha256
 					).digest().encode('base64').strip()
-		logging.error(candidate_sig)
-		logging.error(sig)
 		return candidate_sig == sig
-		
 		
 class SearchInfo(object):
 	"""
