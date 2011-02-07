@@ -8,6 +8,9 @@ import os
 import logging
 import urllib
 import time
+import hmac
+import hashlib
+import copy
 
 from xml.etree import ElementTree as et
 from google.appengine.ext import webapp 
@@ -74,9 +77,15 @@ class IndexHandler(webapp.RequestHandler):
 	# resulting query objects to add to the index.
 	FIELDS = None
 	
-	def get_query(self):
+	# This would be your per-index key used to generate a signature to protect
+	# your indexing URL.
+	INDEX_KEY=None
+	
+	def get_query(self, hourly=False, daily=False, weekly=False):
 		"""
 		Return the query needed to generate the index feed.
+		If your app/query supports it, the hourly, daily, and weekly
+		flags can be used.
 		"""
 		raise NotImplementedError
 
@@ -160,6 +169,14 @@ class IndexHandler(webapp.RequestHandler):
 		
 	def get(self):
 		" Get data in chunks. "
+		
+		# If we defined a key on this handler, use it to validate
+		# request from indexer.
+		if self.INDEX_KEY and not self.check_signature():
+			self.response.set_status(403)
+			logging.warn("A request was made with an invalid or missing signature.")
+			return self.response.out.write("Invalid signature.")
+		
 		self.response.headers['Content-Type'] = 'application/xml'
 		
 		if self.request.GET.get('header'):
@@ -185,6 +202,32 @@ class IndexHandler(webapp.RequestHandler):
 	
 		self.response.headers['X-HS-Length'] = len(objs)
 		self.render_batch(objs)
+		
+	def check_signature(self):
+		" Ensure the data signature is correct if supplied. "
+		
+		key = self.INDEX_KEY
+		
+		if not key:
+			logging.warn("No key found on request handler.")
+			return True
+			
+		if not 'sig' in self.request.params:
+			logging.debug("No signature in request parameters.")
+			return False
+			
+		candidate_sig = self.request.params['sig']
+		
+		sig = ''.join(['%s%s' % (x, self.request.params[x]) \
+			for x in sorted(self.request.params.iterkeys()) if x != 'sig'])
+		logging.error(sig)
+		sig = hmac.new(key, 
+					   msg=sig, 
+					   digestmod=hashlib.sha256
+					).digest().encode('base64').strip()
+		logging.error(candidate_sig)
+		logging.error(sig)
+		return candidate_sig == sig
 		
 		
 class SearchInfo(object):

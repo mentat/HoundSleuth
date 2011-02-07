@@ -40,7 +40,7 @@ class ShakespeareIndexHandler(houndsleuth.IndexHandler):
 			source=lambda x: x.parent_key().id(), type_='IntegerProperty')
 	)
 	
-	def get_query(self):
+	def get_query(self, hourly=False, daily=False, weekly=False):
 		"""
 		Return the query needed to generate the index feed.
 		"""
