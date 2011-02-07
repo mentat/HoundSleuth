@@ -17,6 +17,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext import db
 from google.appengine.api import urlfetch
+from google.appengine.api.urlfetch import DownloadError
 
 from django.utils import simplejson
 
@@ -287,7 +288,7 @@ class Searchable(object):
 		   name:val|name2:val2,val3|name3:val4
 		"""
 		
-		headers = {}
+		headers, resp = {}, None
 		
 		stopwatch = time.time()
 		
@@ -318,24 +319,36 @@ class Searchable(object):
 
 		# Prepare the params for transmission
 		payload = urllib.urlencode(params)
+		
+		def do_request():
+			# Do an HTTP GET if the params are short enough
+			if len(payload) <= POST_THRESHOLD:
+				url = u'%s/search/?%s' % (settings.HOUNDSLEUTH_HOST, payload)
+				logging.debug('Searching via GET: %s' % url)
+				return urlfetch.fetch(url, headers=headers).content
 
-		# Do an HTTP GET if the params are short enough
-		if len(payload) <= POST_THRESHOLD:
-			url = u'%s/search/?%s' % (settings.HOUNDSLEUTH_HOST, payload)
-			logging.debug('Searching via GET: %s' % url)
-			resp = urlfetch.fetch(url, headers=headers).content
-
-		else:
-			# Do an HTTP POST otherwise (e.g., if we're given an enormously long
-			# filter)
-			logging.debug('Searching via POST')
+			else:
+				# Do an HTTP POST otherwise (e.g., if we're given an enormously long
+				# filter)
+				logging.debug('Searching via POST')
 			
-			resp = urlfetch.fetch(
-				url=settings.HOUNDSLEUTH_HOST,
-				payload=payload,
-				headers=headers,
-				method=urlfetch.POST).content
-
+				return urlfetch.fetch(
+					url=settings.HOUNDSLEUTH_HOST,
+					payload=payload,
+					headers=headers,
+					method=urlfetch.POST).content
+		
+		for x in range(3):
+			try:
+				resp = do_request()
+			except DownloadError, msg:
+				logging.warn(msg)
+			else:
+				break
+				
+		if resp is None:
+			raise RuntimeError("Cannot contact HoundSleuth. See logs for details.")
+			
 		# Try to parse the response into JSON
 		results = simplejson.loads(resp)
 
