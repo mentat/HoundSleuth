@@ -232,10 +232,11 @@ class SearchInfo(object):
 	"""
 	Extra information returned with the search results.
 	"""
-	def __init__(self, total, totalfound, searchtime):
+	def __init__(self, total, totalfound, sphinxtime, searchtime = None):
 		self.total = total
 		self.totalfound = totalfound
 		self.searchtime = searchtime
+		self.sphinxtime = sphinxtime
 
 POST_THRESHOLD = 200
 
@@ -351,21 +352,23 @@ class Searchable(object):
 			
 		# Try to parse the response into JSON
 		results = simplejson.loads(resp)
+		
+		hs_time = time.time() - stopwatch
+		logging.debug("Round trip time for HoundSleuth: %f" % hs_time)
 
 		if not 'results' in results:
-			return [], SearchInfo(0,0,0.0)
+			return [], SearchInfo(0,0,0.0, hs_time)
 
 		info = SearchInfo(results['total'],
 						  results['total_found'],
-						  results['time'])
+						  results['time'], 
+						  hs_time)
 
 		# Build a list of item keys based on the IDs in the response
 		keys = [ cls.import_transform_key(r['doc_id'], r) for r in results['results']]
 
 		if keys_only:
 			return keys, info
-		
-		logging.debug("Round trip time for HoundSleuth: %f" % (time.time() - stopwatch))
 		
 		# Get the items from the datastore, filtering out any empty values
 		items = db.get(keys)
