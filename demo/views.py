@@ -19,8 +19,6 @@ class ShakespeareIndexHandler(houndsleuth.IndexHandler):
 	"""
 	A web handler that derives from IndexHandler.
 	"""
-	# We want to index all of the scenes
-	QUERY = models.Scene.all().order('act_num')
 	# Smaller chunck size since they are large, not really needed.
 	CHUNK_SIZE = 10
 	# The list of fields to index.
@@ -41,6 +39,12 @@ class ShakespeareIndexHandler(houndsleuth.IndexHandler):
 		houndsleuth.Field(name='work_num', 
 			source=lambda x: x.parent_key().id(), type_='IntegerProperty')
 	)
+	
+	def get_query(self):
+		"""
+		Return the query needed to generate the index feed.
+		"""
+		return models.Scene.all()
 
 	def export_transform_key(self, entity):
 		"""

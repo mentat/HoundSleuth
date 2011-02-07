@@ -66,9 +66,6 @@ class IndexHandler(webapp.RequestHandler):
 	entity group.
 	"""
 
-	# A datastore query
-	QUERY = None
-
 	# The number of records to pull at a time, if your entities are 
 	# very large you might scale this back some.
 	CHUNK_SIZE = 200
@@ -76,6 +73,12 @@ class IndexHandler(webapp.RequestHandler):
 	# A tuple of Field objects that define which properties of the
 	# resulting query objects to add to the index.
 	FIELDS = None
+	
+	def get_query(self):
+		"""
+		Return the query needed to generate the index feed.
+		"""
+		raise NotImplementedError
 
 	def export_transform_key(self, entity):
 		"""
@@ -90,7 +93,7 @@ class IndexHandler(webapp.RequestHandler):
 		self.response.out.write('<?xml version="1.0" encoding="utf-8"?>\n')
 		self.response.out.write('<sphinx:docset>\n')
 		
-		props = self.QUERY._model_class.properties()
+		props = self.get_query()._model_class.properties()
 		
 		tree = et.Element('sphinx:schema')
 		for field in self.FIELDS:
@@ -126,7 +129,7 @@ class IndexHandler(webapp.RequestHandler):
 		
 	def render_batch(self, batch):
 		" Render a batch of entities to XML. "
-		props = self.QUERY._model_class.properties()
+		props = self.get_query()._model_class.properties()
 		
 		for item in batch:
 			el = et.Element('sphinx:document', { 'id':str(self.export_transform_key(item))})
@@ -168,7 +171,7 @@ class IndexHandler(webapp.RequestHandler):
 		last_key_str = self.request.GET.get('last')
 		chunk = int(self.request.GET.get('chunk', self.CHUNK_SIZE))
 		
-		query = self.QUERY
+		query = self.get_query()
 	
 		if last_key_str:
 			query.with_cursor(last_key_str)
