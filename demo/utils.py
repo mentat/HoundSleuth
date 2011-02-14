@@ -34,4 +34,4 @@ def paginate(self, q, offset, per_page, search_info):
 		html.append('<a href="%s?q=%s&offset=%d">Next &gt;</a>' % (
 			path, q, current_page*per_page))
 
-		return u' | '.join(html)
+	return u' | '.join(html)
