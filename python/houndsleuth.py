@@ -48,14 +48,26 @@ class Field(object):
 	considered full-text indexed fields.
 	IntegerProperty and FloatProperty are considered attribute fields.
 	
+	 * store - Store this value on the index.  Useful for small strings in case
+	    you want to skip datastore access.
+	 * to_ord - Convert string to ordinal value.
+	 * bits - Number of bits to store integer/float in.
+	 * source - The field or callable to draw the value from.  Default is the 
+	    same as name.
+	 * type_ - The type of the field.  Usually not needed except in the case
+	    of using a callable for source.
+	 * kill - Use this value as a kill attribute.  If the resulting value
+	    is True the record will be removed from the index.
 	"""
-	def __init__(self, name, store=False, to_ord=False, bits=32, source=None, type_=None):
+	def __init__(self, name, store=False, to_ord=False, bits=32, 
+				 source=None, type_=None, kill=False):
 		self.name = name
 		self.store = store
 		self.to_order = to_ord
 		self.bits = bits
 		self.source = source
 		self.type_ = type_
+		self.kill = kill
 
 class IndexHandler(webapp.RequestHandler):
 	"""
@@ -107,6 +119,8 @@ class IndexHandler(webapp.RequestHandler):
 		
 		tree = et.Element('sphinx:schema')
 		for field in self.FIELDS:
+			if field.kill:
+				continue
 			if field.source:
 				if callable(field.source):
 					if field.type_ is None:
@@ -140,10 +154,18 @@ class IndexHandler(webapp.RequestHandler):
 	def render_batch(self, batch):
 		" Render a batch of entities to XML. "
 		props = self.get_query()._model_class.properties()
+		kills = []
 		
 		for item in batch:
 			el = et.Element('sphinx:document', { 'id':str(self.export_transform_key(item))})
+			killed = False
 			for field in self.FIELDS:
+				if field.kill and getattr(item, field.name):
+					# Kill the record
+					kills.append(self.export_transform_key(item))
+					killed = True
+					break
+					
 				elem = et.Element(field.name)
 				data = None
 
@@ -166,6 +188,14 @@ class IndexHandler(webapp.RequestHandler):
 				
 				elem.append(CDATA(data))
 				el.append(elem)
+			if not killed:
+				self.response.out.write(et.tostring(el, encoding='utf-8'))
+				
+		if kills:
+			el = et.Element('sphinx:killlist')
+			for kill in kills:
+				sub = et.SubElement(el, 'id')
+				sub.text=str(kill)
 			self.response.out.write(et.tostring(el, encoding='utf-8'))
 		
 	def get(self):
