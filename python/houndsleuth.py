@@ -2,6 +2,7 @@
 # Copyright (c) 2010-2011 - Jesse Lovelace - houndsleuth.com
 #
 # HoundSleuth index handler and search mixin for Python.
+# @version 0.9.1
 #
 
 import os
