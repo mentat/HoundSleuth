@@ -192,7 +192,7 @@ class IndexHandler(webapp.RequestHandler):
 				self.response.out.write(et.tostring(el, encoding='utf-8'))
 				
 		if kills:
-			el = et.Element('sphinx:killlist')
+			el = et.Element('sphinx:killist')
 			for kill in kills:
 				sub = et.SubElement(el, 'id')
 				sub.text=str(kill)
