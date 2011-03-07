@@ -2,7 +2,6 @@
 # Copyright (c) 2010-2011 - Jesse Lovelace - houndsleuth.com
 #
 # HoundSleuth index handler and search mixin for Python.
-# @version: 0.9.0
 #
 
 import os
@@ -93,7 +92,7 @@ class IndexHandler(webapp.RequestHandler):
 	
 	# This would be your per-index key used to generate a signature to protect
 	# your indexing URL.
-	INDEX_KEY = None
+	INDEX_KEY=None
 	
 	def get_query(self, hourly=False, daily=False, weekly=False):
 		"""
@@ -135,7 +134,7 @@ class IndexHandler(webapp.RequestHandler):
 
 			attrs = dict(name=field.name)
 			
-			if type_ in ['StringProperty','TextProperty', 'StringListProperty']:	
+			if type_ in ['StringProperty','TextProperty', 'StringListProperty', 'EmailProperty']:	
 				if field.store:
 					attrs['attr'] = u'string'
 				tree.append(et.Element('sphinx:field', attrs))
@@ -272,7 +271,16 @@ class SearchInfo(object):
 POST_THRESHOLD = 200
 
 class Searchable(object):
-	" A mix-in for model classes to implement search. "
+	""" 
+	A mix-in for model classes to implement search. 
+	
+	Add a INDEX class variable to derived classes that contains
+	a list of the indices you want to search.
+	
+	Add a APP class variable to derived classes that contains
+	the application to search in, or add a global default in a
+	settings model called HOUNDSLEUTH_DEFAULT_APP.
+	"""
 
 	@classmethod
 	def max_relevance(cls, q, weights):
@@ -292,7 +300,7 @@ class Searchable(object):
 	
 	@classmethod
 	def search(cls, phrase, limit=10, offset=None, keys_only=False,
-			   filters=None, order=None, mode=None,
+			   filters=None, order=None, mode=None, app=None,
 			   indices=None, weights=None):
 		"""
 		Makes a request to the HoundSleuth to perform a search.
@@ -333,11 +341,19 @@ class Searchable(object):
 		if indices is None:
 			logging.warn("Cannot complete search without an index defined.")
 			return [], SearchInfo(0,0,0.0)
+			
+		if app is None:
+			if hasattr(cls, 'APP'):
+				app = getattr(cls, 'APP')
+			elif hasattr(settings, 'HOUNDSLEUTH_DEFAULT_APP'):
+				app = getattr(settings, 'HOUNDSLEUTH_DEFAULT_APP')
+			else:
+				raise RuntimeError("You must define an application to search in.")
 		
 		params = {
 			'q': phrase,
 			'l': limit,
-			'a': os.environ['APPLICATION_ID'],
+			'a': app,
 			'o': offset if offset else 0,
 			'f': filters if filters else '',
 			'm': mode if mode else '',
