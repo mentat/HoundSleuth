@@ -1,7 +1,8 @@
 # coding=utf-8
-# Copyright (c) 2010 - Jesse Lovelace - houndsleuth.com
+# Copyright (c) 2010-2011 - Jesse Lovelace - houndsleuth.com
 #
 # HoundSleuth index handler and search mixin for Python.
+# @version: 0.9.0
 #
 
 import os
@@ -92,7 +93,7 @@ class IndexHandler(webapp.RequestHandler):
 	
 	# This would be your per-index key used to generate a signature to protect
 	# your indexing URL.
-	INDEX_KEY=None
+	INDEX_KEY = None
 	
 	def get_query(self, hourly=False, daily=False, weekly=False):
 		"""
