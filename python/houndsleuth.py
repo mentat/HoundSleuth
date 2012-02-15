@@ -4,7 +4,7 @@
 # HoundSleuth python library.
 # @version 1.0.0
 #
-
+import logging
 import urllib
 import httplib
 import base64
@@ -27,11 +27,11 @@ class Index(object):
     def __init__(self, index_name, host, appid = None, api_key = None, ):
         self.index_name = index_name
         self.key = api_key
-        self.host = host
+        self.host = host.replace('http://','')
         self.appid = appid
         
         if '@' in host:
-            self.key, self.host = host.replace('http://','').split('@')
+            self.key, self.host = host.split('@')
             self.user, self.key = self.key.split(':')
         
     def add(self, docid, fields, categories=None, variables=None):
@@ -71,7 +71,7 @@ class Index(object):
             'fetch':fields and (u','.join(fields)).encode('utf-8') or '',
             'function':function and function or 0,
             'cursor':cursor and cursor or ''
-        }, True)
+        }, False)
         
     def _request(self, path, method, data, json_body=False):
         """ Do an HTTP request. """
@@ -93,11 +93,18 @@ class Index(object):
             headers['Content-Type'] = 'application/json'
         else:
             data = urllib.urlencode(data)
+            if method=='GET':
+                path = '%s?%s' % (path, data)
+                data = None
 
         conn = httplib.HTTPConnection(self.host)
         conn.request(method, path, data, headers)
-        
-        resp = conn.getresponse()
+        try:
+            resp = conn.getresponse()
+        except Exception:
+            logging.error("Problem contacting host: %s" % self.host)
+            raise IndexError("Cannot contact HoundSleuth.")
+
         raw_data = resp.read()
         
         try:
@@ -122,5 +129,3 @@ if __name__ == '__main__':
     for x in data:
         dex.add(x['docid'], x['fields'], x.get('categories'), x.get('variables'))
         
-    
-    
