@@ -11,49 +11,10 @@ from google.appengine.ext import db
 from urllib import quote_plus, unquote_plus
 
 import models
-import houndsleuth
+
+import settings
 
 from utils import paginate
-
-class ShakespeareIndexHandler(houndsleuth.IndexHandler):
-    """
-    A web handler that derives from IndexHandler.
-    """
-    # Smaller chunck size since they are large, not really needed.
-    CHUNK_SIZE = 10
-    # The list of fields to index.
-    FIELDS = (
-        # Index 'title' and store it on the index.
-        houndsleuth.Field(name='title', store=True),
-        # Index 'text'--the scene text
-        houndsleuth.Field(name='text'),
-        # Add act num as an attribute--since it's in IntergerProperty
-        # this is the default.
-        houndsleuth.Field(name='act_num'),
-        # Add scene num as an attribute--since it's in IntergerProperty
-        # this is the default.
-        houndsleuth.Field(name='scene_num'),
-        # Add act num as an attribute--here the source for the field
-        # is a lambda function that takes the object.  We specify
-        # the type to be 'IntegerProperty'.
-        houndsleuth.Field(name='work_num', 
-            source=lambda x: x.parent_key().id(), type_='IntegerProperty')
-    )
-    
-    def get_query(self, hourly=False, daily=False, weekly=False):
-        """
-        Return the query needed to generate the index feed.
-        """
-        return models.Scene.all()
-
-    def export_transform_key(self, entity):
-        """
-        Creates a unique integer key for this index based on
-        a combination of the parent and child key's integer ids.
-        The default implementation of this function simply 
-        uses key().id(). 
-        """
-        return int('%d%05d' % (entity.parent_key().id(), entity.key().id()))
     
 class SearchWorksHandler(webapp.RequestHandler):
     """
@@ -72,6 +33,7 @@ class SearchWorksHandler(webapp.RequestHandler):
             # Unquote if we are continuing in a result set
             q = offset and unquote_plus(self.request.params['q']) or \
                 self.request.params['q']
+            logging.error(q)
             # Execute the search here
             works, info = models.Scene.search(q, 
                 limit=self.PER_PAGE, offset=offset)

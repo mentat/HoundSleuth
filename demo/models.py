@@ -1,9 +1,10 @@
 # coding=utf-8
-# Copyright (c) 2010 - Jesse Lovelace - houndsleuth.com
+# Copyright (c) 2010-2012 - Jesse Lovelace - houndsleuth.com
 
 from google.appengine.ext import db
 
-import houndsleuth
+import houndsleuth as hs
+import settings as s
     
 class Work(db.Model):
     " A work of literature. "
@@ -14,12 +15,8 @@ class Work(db.Model):
     # The genre of the work
     genre = db.StringProperty()
     
-class Scene(db.Model, houndsleuth.Searchable):
+class Scene(db.Model):
     " A scene from a work. "
-    
-    # Define the name of the HoundSleuth index, can be multiple indices
-    # as long as they share primary key space.
-    INDEX = ['shakespeare']
 
     # Denormed 
     work_title = db.StringProperty(multiline=True)
@@ -37,19 +34,27 @@ class Scene(db.Model, houndsleuth.Searchable):
     text = db.TextProperty()
 
     @classmethod
-    def import_transform_key(cls, doc_id, properties):
-        """
-        Create a key based on the properties stored on the
-        index.  The default implementation is to create 
-        a key like this:
-            db.Key.from_path(cls.__name__, doc_id)
+    def _get_index(cls):
+        """ Helper to return index API. """
+        return hs.Index(s.HOUNDSLEUTH_INDEX, s.HOUNDSLEUTH_HOST)
+        
+    def index(self):
+        """ Index this data with Houndsleuth. """
+        fields = {
+            'text': self.text,
+            'work_title': self.work_title,
+            'scene_title': self.title,
+        }
+        variables = {
+            1:self.act_num,
+            2:self.scene_num
+        }
+        Scene._get_index().add(
+            str(self.key()), fields, variables=variables)
 
-        Which will be suitable for some applications.
-        """
-        # In this particular case the key is weird since I'm 
-        # combining the idea of a act and scene into a single
-        # integer for the child key...
-        return db.Key.from_path('Work', properties['work_num'], 
-                                  'Scene', int('%03d%03d' % (properties['act_num'], 
-                                                           properties['scene_num'])))
-    
+    @classmethod
+    def search(cls, query, limit, offset=None, cursor=None):
+        """ Execute a FTS on the index. """
+        response = cls._get_index().search(query, limit, offset)
+        keys = [db.Key(x['docid']) for x in response['results']]
+        return db.get(keys), response

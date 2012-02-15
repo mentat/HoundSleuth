@@ -3,7 +3,7 @@ from urllib import quote_plus, unquote_plus
 def paginate(self, q, offset, per_page, search_info):
     " Return an html pagination for the search results. "
 
-    if search_info.totalfound == 0:
+    if search_info['matches'] == 0:
         return ''
 
     MAX_PAGES = 10
@@ -17,7 +17,7 @@ def paginate(self, q, offset, per_page, search_info):
         html.append('<a href="%s?q=%s&offset=%d">&lt; Prev</a>' % (path, q, offset-per_page))
 
     page_offset = 0
-    pages = search_info.totalfound / per_page + 1
+    pages = search_info['matches'] / per_page + 1
     current_page = offset/per_page + 1
 
     if (current_page > MAX_PAGES/2) and ( (MAX_PAGES/2+current_page) < pages):
