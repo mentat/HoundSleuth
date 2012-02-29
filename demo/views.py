@@ -27,13 +27,12 @@ class SearchWorksHandler(webapp.RequestHandler):
         " Get either the list of works or search. "
         q = None
 
-        if 'q' in self.request.params:
+        if self.request.params.get('q'):
             # If 'q' in params find offset if given and search
             offset = int(self.request.params.get('offset', 0))
             # Unquote if we are continuing in a result set
             q = offset and unquote_plus(self.request.params['q']) or \
                 self.request.params['q']
-            logging.error(q)
             # Execute the search here
             works, info = models.Scene.search(q, 
                 limit=self.PER_PAGE, offset=offset)

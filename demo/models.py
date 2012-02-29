@@ -50,11 +50,15 @@ class Scene(db.Model):
             2:self.scene_num
         }
         Scene._get_index().add(
-            str(self.key()), fields, variables=variables)
+            str(self.key), fields, variables=variables)
 
     @classmethod
     def search(cls, query, limit, offset=None, cursor=None):
         """ Execute a FTS on the index. """
         response = cls._get_index().search(query, limit, offset)
         keys = [db.Key(x['docid']) for x in response['results']]
-        return db.get(keys), response
+        clean_keys = [db.Key.from_path('Work', x.parent().id(), 'Scene', x.id()) for x in keys]
+        objs = db.get(clean_keys)
+        for ob, res in zip(objs, response['results']):
+            setattr(ob, 'query_relevance_score', res['query_relevance_score'])
+        return objs, response

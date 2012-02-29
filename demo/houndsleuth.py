@@ -113,7 +113,7 @@ class Index(object):
             data = { 'message': raw_data }
             
         if resp.status > 299:
-            raise IndexError(data['message'])
+            raise IndexError(raw_data)
             
         return data
 

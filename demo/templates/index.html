@@ -60,7 +60,7 @@
 			<td class="center">{{item.act_num}}</td>
 			<td class="center">{{item.scene_num}}</td>
 			<td><a href="/demo/works/{{item.parent_key.id}}/scenes/{{item.key.id}}">{{item.title}}</a></td>
-			<td class="center">{{item.weight}}</td>
+			<td class="center">{{item.query_relevance_score}}</td>
 		</tr>
 		{% endfor %}
 		<tr>
