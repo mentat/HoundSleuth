@@ -1,0 +1,7 @@
+indexes:
+
+- kind: Scene
+  ancestor: yes
+  properties:
+  - name: act_num
+  - name: scene_num
